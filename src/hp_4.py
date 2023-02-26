@@ -8,27 +8,84 @@ from collections import defaultdict
 def reformat_dates(old_dates):
     """Accepts a list of date strings in format yyyy-mm-dd, re-formats each
     element to a format dd mmm yyyy--01 Jan 2001."""
-    pass
+    new_format_dates=[]
+    for a in dates:
+        
+        res = datetime.strptime(a, "%Y-%m-%d").strftime('%d %b %Y')
+        
+        new_format_dates.append(res)
+        
+    return new_format_dates
 
 
 def date_range(start, n):
     """For input date string `start`, with format 'yyyy-mm-dd', returns
     a list of of `n` datetime objects starting at `start` where each
     element in the list is one day after the previous."""
-    pass
+    if not isinstance(start, str) or not isinstance(n, int):
+        
+        raise TypeError()
+    
+    ds = []
+    
+    start_date = datetime.strptime(start, '%Y-%m-%d')
+    
+    for i in range(n):
+        
+        ds.append(start_date + timedelta(days=i))
+        
+    return ds
 
 
 def add_date_range(values, start_date):
     """Adds a daily date range to the list `values` beginning with
     `start_date`.  The date, value pairs are returned as tuples
     in the returned list."""
-    pass
+    ndays = len(values)
+    
+    date_range_list = date_range(start_date, ndays)
+
+   
+    rstel = list(zip(date_range_list, values))
+    return rstel
 
 
 def fees_report(infile, outfile):
     """Calculates late fees per patron id and writes a summary report to
     outfile."""
-    pass
+    h1 = ("book_uid,isbn_13,patron_id,date_checkout,date_due,date_returned".
+              split(','))
+    
+    output_data = defaultdict(float)
+    
+    with open(infile, 'r') as f:
+        data = DictReader(f, fieldnames=h1)
+        rows = [row for row in data]
+
+    rows.pop(0)
+       
+    for x in rows:
+       
+        patronID = x['patron_id']
+        
+        date_due_on = datetime.strptime(x['date_due'], "%m/%d/%Y")
+        
+        date_returned_on = datetime.strptime(x['date_returned'], "%m/%d/%Y")
+        
+        number_of_late_days = (date_returned_on - date_due_on).days
+        
+        output_data[patronID]+= 0.25 * number_of_late_days if number_of_late_days > 0 else 0.0
+        
+                 
+    scores = [
+        {'patron_id': p, 'late_fees': f'{f:0.2f}'} for p, f in output_data.items()
+    ]
+    h2 = ['patron_id', 'late_fees']
+    with open(outfile, 'w') as f:
+        
+        writer = DictWriter(f,h2)
+        writer.writeheader()
+        writer.writerows(scores)
 
 
 # The following main selection block will only run when you choose
